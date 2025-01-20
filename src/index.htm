@@ -1,0 +1,204 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Tempo Trainer</title>
+    <style>
+        body {
+            font-family: Arial, sans-serif;
+            text-align: center;
+            padding: 20px;
+        }
+
+        input {
+            font-size: 18px;
+            margin: 10px;
+        }
+
+        button {
+            font-size: 32px;
+            padding: 15px 30px;
+            margin: 10px;
+            border: none;
+            border-radius: 8px;
+            cursor: pointer;
+        }
+
+        #start {
+            background-color: #4CAF50;
+            color: white;
+        }
+
+        #stop {
+            background-color: #f44336;
+            color: white;
+        }
+
+        .container {
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            gap: 20px;
+            margin: 20px 0;
+        }
+
+        .box {
+            flex: 1;
+            display: flex;
+            flex-direction: column;
+            justify-content: center;
+            align-items: center;
+            border: 2px solid #333;
+            border-radius: 8px;
+            padding: 20px;
+            font-size: 24px;
+            height: 120px;
+        }
+
+        .timer {
+            background-color: #f0f8ff;
+        }
+
+        .completed-reps {
+            background-color: #e6ffe6;
+        }
+
+        .sequence-display {
+            font-size: 24px;
+            color: grey;
+            margin-bottom: 10px;
+        }
+
+        .current-value {
+            font-weight: bold;
+            color: black;
+            font-size: 48px;
+        }
+
+        .completed-reps span {
+            font-size: 48px;
+            font-weight: bold;
+        }
+    </style>
+</head>
+
+<body>
+    <h1>Tempo Trainer</h1>
+    <label for="sequence">Enter Durations (e.g., 3121):</label>
+    <input id="sequence" type="text" value="3121">
+    <br>
+    <label for="reps">Reps:</label>
+    <input id="reps" type="number" value="5" min="1">
+    <br>
+    <button id="start">Start</button>
+    <button id="stop" disabled>Stop</button>
+
+    <div class="container">
+        <div class="box timer">
+            <div class="sequence-display" id="sequenceDisplay">3121</div>
+            <div class="current-value" id="timer">0.00</div>
+        </div>
+        <div class="box completed-reps">
+            Completed Reps: <span id="completedReps">0</span>
+        </div>
+    </div>
+
+    <!-- Sound Effects -->
+    <audio id="tick" src="media/Tick-DeepFrozenApps-397275646.mp3"></audio>
+    <audio id="ding" src="media/ding-101377.mp3"></audio>
+    <audio id="tada" src="media/tada.wav"></audio>
+
+    <script>
+        const startButton = document.getElementById('start');
+        const stopButton = document.getElementById('stop');
+        const sequenceInput = document.getElementById('sequence');
+        const repsInput = document.getElementById('reps');
+        const timerDisplay = document.getElementById('timer');
+        const sequenceDisplay = document.getElementById('sequenceDisplay');
+        const completedRepsDisplay = document.getElementById('completedReps');
+        const tickSound = document.getElementById('tick');
+        const dingSound = document.getElementById('ding');
+        const tadaSound = document.getElementById('tada');
+
+        let interval, durations, currentDurationIndex, remainingTime, completedReps, maxReps;
+
+        function start() {
+            durations = sequenceInput.value.split('').map(Number); // Convert "3121" to [3, 1, 2, 1]
+            sequenceDisplay.textContent = sequenceInput.value; // Show the full sequence
+            maxReps = parseInt(repsInput.value, 10);
+            currentDurationIndex = 0;
+            remainingTime = durations[0];
+            completedReps = 0;
+            completedRepsDisplay.textContent = completedReps;
+
+            startButton.disabled = true;
+            stopButton.disabled = false;
+            sequenceInput.disabled = true;
+            repsInput.disabled = true;
+            updateSequenceDisplay(); // Highlight the current value
+            timerDisplay.textContent = remainingTime.toFixed(2);
+            interval = setInterval(runTimer, 10);
+        }
+
+        function stop() {
+            clearInterval(interval);
+            startButton.disabled = false;
+            stopButton.disabled = true;
+            sequenceInput.disabled = false;
+            repsInput.disabled = false;
+            timerDisplay.textContent = "0.00";
+            sequenceDisplay.textContent = sequenceInput.value; // Reset sequence display
+        }
+
+        function runTimer() {
+            if (remainingTime > 0) {
+                remainingTime -= 0.01;
+                if (remainingTime < 0) remainingTime = 0;
+                timerDisplay.textContent = remainingTime.toFixed(2);
+            } else {
+                if (currentDurationIndex === durations.length - 1) {
+                    dingSound.play();
+                } else {
+                    tickSound.play();
+                }
+
+                currentDurationIndex++;
+                if (currentDurationIndex >= durations.length) {
+                    completedReps++;
+                    completedRepsDisplay.textContent = completedReps;
+
+                    if (completedReps >= maxReps) {
+                        tadaSound.play(); // Play the tada sound when all reps are completed
+                        stop();
+                        return;
+                    }
+
+                    currentDurationIndex = 0;
+                }
+
+                remainingTime = durations[currentDurationIndex];
+                updateSequenceDisplay(); // Highlight the current value
+                timerDisplay.textContent = remainingTime.toFixed(2);
+            }
+        }
+
+        function updateSequenceDisplay() {
+            const fullSequence = sequenceInput.value.split('');
+            const highlightedSequence = fullSequence
+                .map((value, index) =>
+                    index === currentDurationIndex
+                        ? `<span style="color: black; font-weight: bold;">${value}</span>`
+                        : `<span style="color: grey;">${value}</span>`
+                )
+                .join('');
+            sequenceDisplay.innerHTML = highlightedSequence; // Update display with bold current value
+        }
+
+        startButton.addEventListener('click', start);
+        stopButton.addEventListener('click', stop);
+    </script>
+</body>
+
+</html>
