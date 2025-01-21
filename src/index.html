@@ -193,8 +193,10 @@
 
         function playSoundForCurrentStep() {
             if (currentDurationIndex === durations.length - 1) {
+                dingSound.currentTime = 0; // Reset to ensure the sound plays
                 dingSound.play();
             } else {
+                tickSound.currentTime = 0; // Reset to ensure the sound plays
                 tickSound.play();
             }
         }
