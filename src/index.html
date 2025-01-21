@@ -126,43 +126,102 @@
         const dingSound = document.getElementById('ding');
         const tadaSound = document.getElementById('tada');
 
+        const TIMER_INTERVAL = 100; // Update interval in milliseconds
+        const DECIMAL_PLACES = 1; // Decimal precision for timer display
+
         let interval, delayInterval, durations, currentDurationIndex, remainingTime, completedReps, maxReps, startDelay;
 
         function start() {
-            durations = sequenceInput.value.split('').map(Number); // Convert "3121" to [3, 1, 2, 1]
-            sequenceDisplay.textContent = sequenceInput.value; // Show the full sequence
+            durations = sequenceInput.value.split('').map(Number); // Parse sequence
             maxReps = parseInt(repsInput.value, 10);
             startDelay = parseInt(startDelayInput.value, 10);
             currentDurationIndex = 0;
             completedReps = 0;
-            completedRepsDisplay.textContent = completedReps;
 
+            completedRepsDisplay.textContent = completedReps;
+            sequenceDisplay.textContent = sequenceInput.value; // Show full sequence
             startButton.disabled = true;
             stopButton.disabled = false;
             sequenceInput.disabled = true;
             repsInput.disabled = true;
             startDelayInput.disabled = true;
 
-            timerDisplay.textContent = startDelay.toFixed(2);
+            timerDisplay.textContent = startDelay.toFixed(DECIMAL_PLACES);
             dingSound.play();
 
             // Start the delay countdown
             delayInterval = setInterval(() => {
                 if (startDelay > 0) {
-                    startDelay -= 0.01;
-                    timerDisplay.textContent = startDelay.toFixed(2);
+                    startDelay -= TIMER_INTERVAL / 1000; // Convert ms to seconds
+                    timerDisplay.textContent = startDelay.toFixed(DECIMAL_PLACES);
                 } else {
                     clearInterval(delayInterval);
-                    timerDisplay.textContent = durations[0].toFixed(2);
-                    remainingTime = durations[0];
-                    startMainSequence(); // Begin the main sequence
+                    startMainSequence();
                 }
-            }, 10);
+            }, TIMER_INTERVAL);
         }
 
         function startMainSequence() {
-            updateSequenceDisplay(); // Highlight the current value
-            interval = setInterval(runTimer, 10);
+            remainingTime = durations[0];
+            updateSequenceDisplay();
+            interval = setInterval(runTimer, TIMER_INTERVAL);
+        }
+
+        function runTimer() {
+            const previousDisplay = timerDisplay.textContent;
+
+            if (remainingTime > 0) {
+                remainingTime -= TIMER_INTERVAL / 1000;
+                if (remainingTime < 0) remainingTime = 0;
+
+                const newDisplay = remainingTime.toFixed(DECIMAL_PLACES);
+                if (newDisplay !== previousDisplay) {
+                    timerDisplay.textContent = newDisplay;
+                }
+            } else {
+                playSoundForCurrentStep();
+
+                currentDurationIndex++;
+                if (currentDurationIndex >= durations.length) {
+                    handleRepetitionComplete();
+                } else {
+                    remainingTime = durations[currentDurationIndex];
+                    updateSequenceDisplay();
+                }
+            }
+        }
+
+        function playSoundForCurrentStep() {
+            if (currentDurationIndex === durations.length - 1) {
+                dingSound.play();
+            } else {
+                tickSound.play();
+            }
+        }
+
+        function handleRepetitionComplete() {
+            completedReps++;
+            completedRepsDisplay.textContent = completedReps;
+
+            if (completedReps >= maxReps) {
+                tadaSound.play();
+                stop();
+            } else {
+                currentDurationIndex = 0;
+                remainingTime = durations[0];
+                updateSequenceDisplay();
+            }
+        }
+
+        function updateSequenceDisplay() {
+            const highlightedSequence = durations
+                .map((value, index) =>
+                    index === currentDurationIndex
+                        ? `<span style="color: black; font-weight: bold;">${value}</span>`
+                        : `<span style="color: grey;">${value}</span>`
+                )
+                .join('');
+            sequenceDisplay.innerHTML = highlightedSequence;
         }
 
         function stop() {
@@ -177,50 +236,7 @@
             sequenceDisplay.textContent = sequenceInput.value; // Reset sequence display
         }
 
-        function runTimer() {
-            if (remainingTime > 0) {
-                remainingTime -= 0.01;
-                if (remainingTime < 0) remainingTime = 0;
-                timerDisplay.textContent = remainingTime.toFixed(2);
-            } else {
-                if (currentDurationIndex === durations.length - 1) {
-                    dingSound.play();
-                } else {
-                    tickSound.play();
-                }
-
-                currentDurationIndex++;
-                if (currentDurationIndex >= durations.length) {
-                    completedReps++;
-                    completedRepsDisplay.textContent = completedReps;
-
-                    if (completedReps >= maxReps) {
-                        tadaSound.play(); // Play the tada sound when all reps are completed
-                        stop();
-                        return;
-                    }
-
-                    currentDurationIndex = 0;
-                }
-
-                remainingTime = durations[currentDurationIndex];
-                updateSequenceDisplay(); // Highlight the current value
-                timerDisplay.textContent = remainingTime.toFixed(2);
-            }
-        }
-
-        function updateSequenceDisplay() {
-            const fullSequence = sequenceInput.value.split('');
-            const highlightedSequence = fullSequence
-                .map((value, index) =>
-                    index === currentDurationIndex
-                        ? `<span style="color: black; font-weight: bold;">${value}</span>`
-                        : `<span style="color: grey;">${value}</span>`
-                )
-                .join('');
-            sequenceDisplay.innerHTML = highlightedSequence; // Update display with bold current value
-        }
-
+        // Event Listeners
         startButton.addEventListener('click', start);
         stopButton.addEventListener('click', stop);
     </script>
