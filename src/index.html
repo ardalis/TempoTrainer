@@ -92,6 +92,9 @@
     <label for="reps">Reps:</label>
     <input id="reps" type="number" value="5" min="1">
     <br>
+    <label for="startDelay">Start Delay (seconds):</label>
+    <input id="startDelay" type="number" value="5" min="0">
+    <br>
     <button id="start">Start</button>
     <button id="stop" disabled>Stop</button>
 
@@ -115,6 +118,7 @@
         const stopButton = document.getElementById('stop');
         const sequenceInput = document.getElementById('sequence');
         const repsInput = document.getElementById('reps');
+        const startDelayInput = document.getElementById('startDelay');
         const timerDisplay = document.getElementById('timer');
         const sequenceDisplay = document.getElementById('sequenceDisplay');
         const completedRepsDisplay = document.getElementById('completedReps');
@@ -122,14 +126,14 @@
         const dingSound = document.getElementById('ding');
         const tadaSound = document.getElementById('tada');
 
-        let interval, durations, currentDurationIndex, remainingTime, completedReps, maxReps;
+        let interval, delayInterval, durations, currentDurationIndex, remainingTime, completedReps, maxReps, startDelay;
 
         function start() {
             durations = sequenceInput.value.split('').map(Number); // Convert "3121" to [3, 1, 2, 1]
             sequenceDisplay.textContent = sequenceInput.value; // Show the full sequence
             maxReps = parseInt(repsInput.value, 10);
+            startDelay = parseInt(startDelayInput.value, 10);
             currentDurationIndex = 0;
-            remainingTime = durations[0];
             completedReps = 0;
             completedRepsDisplay.textContent = completedReps;
 
@@ -137,17 +141,38 @@
             stopButton.disabled = false;
             sequenceInput.disabled = true;
             repsInput.disabled = true;
+            startDelayInput.disabled = true;
+
+            timerDisplay.textContent = startDelay.toFixed(2);
+            dingSound.play();
+
+            // Start the delay countdown
+            delayInterval = setInterval(() => {
+                if (startDelay > 0) {
+                    startDelay -= 0.01;
+                    timerDisplay.textContent = startDelay.toFixed(2);
+                } else {
+                    clearInterval(delayInterval);
+                    timerDisplay.textContent = durations[0].toFixed(2);
+                    remainingTime = durations[0];
+                    startMainSequence(); // Begin the main sequence
+                }
+            }, 10);
+        }
+
+        function startMainSequence() {
             updateSequenceDisplay(); // Highlight the current value
-            timerDisplay.textContent = remainingTime.toFixed(2);
             interval = setInterval(runTimer, 10);
         }
 
         function stop() {
             clearInterval(interval);
+            clearInterval(delayInterval);
             startButton.disabled = false;
             stopButton.disabled = true;
             sequenceInput.disabled = false;
             repsInput.disabled = false;
+            startDelayInput.disabled = false;
             timerDisplay.textContent = "0.00";
             sequenceDisplay.textContent = sequenceInput.value; // Reset sequence display
         }
